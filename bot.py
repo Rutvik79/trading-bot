@@ -188,6 +188,71 @@ class BasicBot:
             logger.error(f"Unexpected error placing limit order: {e}")
             return None
         
+    def place_stop_limit_order(self, symbol, side, quantity, stop_price, limit_price):
+        """  
+        Place a stop-limit order 
+        Triggers a limit order when stop price is reached
+
+        Args:
+            symbol (str): Trading pair
+            side (str): 'BUY' or 'SELL'
+            quantity (float): Amount to trade
+            stop_price (float): Trigger price
+            limit_price (float): limit price after trigger
+
+        Returns:
+            dict: Order details or None if error
+        """
+
+        try:
+            # Validate input
+            if side not in ['BUY', 'SELL']:
+                raise ValueError("Side must be 'BUY' or 'SELL'")
+            if quantity <= 0:
+                raise ValueError("Quantity must be positive")
+            if stop_price <= 0 or limit_price <= 0:
+                raise ValueError("Prices must be positive")
+            
+            logger.info(f"Placing STOP_LILMIT {side} order: {quantity} {symbol}")
+            logger.info(f"Stop Price: ${stop_price} Limit Price: ${limit_price}")
+
+            # log request
+            logger.info(f"Request - Symbol: {symbol}, Side: {side}, "
+                         f"Type: STOP, Quantity: {quantity}, "
+                         f"Stop Price: {stop_price}, Limit Price: {limit_price}")
+            
+            # plcae the order
+            order = self.client.futures_create_order(
+                symbol=symbol,
+                side=side,
+                type='STOP',
+                timeInForce='GTC',
+                quantity=quantity,
+                price=limit_price,
+                stopPrice=stop_price
+            )
+
+            # print("order from stop limit", order)
+            # log response
+            logger.info(f"Response - Order ID: {order['algoId']}, "
+                        f"Status: {order['algoStatus']}")
+            logger.info(f" Stop-limit order placed successfully")
+
+            # forat output
+            self._print_stop_limit_order_details(order)
+
+            return order
+
+        except BinanceAPIException as e:
+            logger.error(f"Binance API Error: {e}")
+            return None
+        except ValueError as e:
+            logger.error(f" Vallidation Error: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error placing stop-limit order: {e}")
+            return None
+
     def get_open_orders(self, symbol=None):
         """  
         Get all open orders
@@ -246,7 +311,7 @@ class BasicBot:
             order (dict): Order Information
         """
 
-        print("\n" + "="*30)
+        print("\n" + "="*60)
         print(" ORDER EXECUTION DETAILS")
         print("="*60)
         print(f"Order ID:          {order.get('orderId')}")
@@ -255,6 +320,33 @@ class BasicBot:
         print(f"Type:              {order.get('type')}")
         print(f"Status:            {order.get('status')}")
         print(f"Quantity:          {order.get('origQty')}")
+        print(f"Expected Qty:      {order.get('executedQty', 'N/A')}")
+
+        if order.get('price'):
+            print(f"Price:             ${float(order.get('price')):,.2f}")
+        if order.get('avgPrice'):
+            print(f"Avg Price:         ${float(order.get('avgPrice')):,.2f}")
+
+        print(f"Time:              {datetime.fromtimestamp(order.get('updateTime', 0)/1000)}")
+        print("="*60 + "\n")
+
+    def _print_stop_limit_order_details(self, order):
+        """ 
+        Print formatted order details to console
+
+        Args:
+            order (dict): Order Information
+        """
+
+        print("\n" + "="*60)
+        print(" ORDER EXECUTION DETAILS")
+        print("="*60)
+        print(f"Order ID:          {order.get('algoId')}")
+        print(f"Symbol:            {order.get('symbol')}")
+        print(f"Side:              {order.get('side')}")
+        print(f"Type:              {order.get('algoType')}")
+        print(f"Status:            {order.get('algoStatus')}")
+        print(f"Quantity:          {order.get('quantity')}")
         print(f"Expected Qty:      {order.get('executedQty', 'N/A')}")
 
         if order.get('price'):

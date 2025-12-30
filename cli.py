@@ -82,6 +82,9 @@ Examples:
     # Place limit sell order
     python cli.py --action sell --amount 0.01 --type limit --price 95000
 
+    # Place stop-limit order
+    python cli.py --action buy --amount 0.01 --type stop-limit --stop-price 90000 --price 90500
+
     # View Open orders
     python cli.py --action orders
 
@@ -111,7 +114,7 @@ Examples:
 
     parser.add_argument(
         '--type',
-        choices=['market', 'limit'],
+        choices=['market', 'limit', 'stop-limit'],
         default='market',
         help='Order type (default: market)'
     )
@@ -119,7 +122,13 @@ Examples:
     parser.add_argument(
         '--price',
         type=float,
-        help='Price for limit orders'
+        help='Price for limit/stop-limit orders'
+    )
+
+    parser.add_argument(
+        '--stop-price',
+        type=float,
+        help='Stop price for stop-limit orders'
     )
 
     parser.add_argument(
@@ -146,6 +155,14 @@ Examples:
         if args.type == 'limit' and (not args.price or args.price <= 0):
             print("Error: Limit orders require --price")
             sys.exit(1)
+
+        if args.type == 'stop-limit':
+            if not args.stop_price or args.stop_price <= 0:
+                print("Error: Stop-limit orders require --stop-price")
+                sys.exit(1)
+            if not args.price or args.price <= 0:
+                print("Error: Stop-limit orders require --price")
+                sys.exit(1)
 
     if args.action == 'cancel' and not args.order_id:
         print("Error: Cancel action requires --order-id")
@@ -185,6 +202,9 @@ Examples:
 
             elif args.type == 'limit':
                 bot.place_limit_order(args.symbol, side, args.amount, args.price)
+
+            elif args.type == 'stop-limit':
+                bot.place_stop_limit_order(args.symbol, side, args.amount, args.stop_price, args.price)
 
     except KeyboardInterrupt:
         print("\n Operation Cancelled by user \n")
