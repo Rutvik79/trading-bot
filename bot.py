@@ -2,6 +2,7 @@ from binance import Client
 from logger import setup_logger
 from binance.exceptions import BinanceAPIException
 from binance.enums import ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, TIME_IN_FORCE_GTC
+from datetime import datetime
 
 logger = setup_logger()
 
@@ -9,7 +10,8 @@ class BasicBot:
 
     def __init__(self, api_key, api_secret, testnet=True):
         # init binance client
-        self.client = Client(api_key, api_secret, testnet)
+    
+        self.client = Client(api_key, api_secret, testnet=testnet)
 
         # set future url
         self.client.API_URL = 'https://testnet.binancefuture.com'
@@ -51,7 +53,7 @@ class BasicBot:
                 raise ValueError("Quantity must be positive")
             
             # log request details
-            logger.info(f"Request - Symbol: {symbol}, Side: {side}"
+            logger.info(f"Request - Symbol: {symbol}, Side: {side}, "
                         f"Type: {ORDER_TYPE_MARKET}, Quantity: {quantity}")
             
             # place the order
@@ -59,13 +61,16 @@ class BasicBot:
                 symbol=symbol,
                 side=side,
                 type=ORDER_TYPE_MARKET,
-                quantity=quantity
+                quantity=quantity,
+                timestamp=datetime.now(),
             )
 
             # log response
             logger.info(f"Response - Order ID: {order['orderId']}, "
                         f"Status: {order['status']}")
             logger.info(f"Market order executed successfully")
+
+            self._print_order_details(order)
 
             return order
         
@@ -123,6 +128,8 @@ class BasicBot:
                         f"Status: {order['status']}")
             logger.info(f"Limit order placed successfully!")
 
+            self._print_order_details(order)
+
             return order
 
         except BinanceAPIException as e:
@@ -134,3 +141,27 @@ class BasicBot:
         except Exception as e:
             logger.error(f"Unexpected error placing limit order: {e}")
             return None
+        
+    def _print_order_details(self, order):
+        """ 
+        Print formatted order details to console
+
+        Args:
+            order (dict): Order Information
+        """
+
+        print("\n" + "="*30)
+        print(" ORDER EXECUTION DETAILS")
+        print("="*60)
+        print(f"Order ID:          {order.get('orderId')}")
+        print(f"Symbol:            {order.get('symbol')}")
+        print(f"Side:              {order.get('side')}")
+        print(f"Type:              {order.get('type')}")
+        print(f"Status:            {order.get('status')}")
+        print(f"Quantity:          {order.get('origQty')}")
+        print(f"Expected Qty:      {order.get('executedQty', 'N/A')}")
+
+        if order.get('price'):
+            print(f"Price:             ${float(order.get('price')):,.2f}")
+
+        print(f"Time:              {datetime.fromtimestamp(order.get('updateTime', 0)/1000)}")
