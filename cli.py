@@ -6,6 +6,62 @@ from logger import setup_logger
 
 logger = setup_logger()
 
+def display_balance(bot):
+    """Display account balance"""
+    balance = bot.get_balance()
+
+    if not balance:
+        print("Failed to retrieve balance")
+        return
+
+    print("\n" + "="*60)
+    print(" ACCOUNT BALANCE")
+    print("="*60)
+
+    for asset in balance:
+        available = float(asset['availableBalance'])
+        if available > 0:
+            print(f"{asset['asset']:8} - Available: {available:>15,.4f}")
+
+    print("="*60 + "\n")
+
+def display_price(bot, symbol):
+    """Display current price"""
+    price = bot.get_current_price(symbol)
+
+    if price:
+        print(f"\n Current {symbol} Price: ${price:,.2f}\n")
+    else:
+        print(f"\n Failed to get price for {symbol}")
+
+def display_open_orders(bot, symbol=None):
+    """Display open orders"""
+    orders = bot.get_open_orders(symbol)
+    
+    if orders is None:
+        print(" Failed to retieve orders")
+        return
+
+    if not orders:
+        print("\n No open orders\n")
+        return
+    
+    print("\n" + "="*60)
+    print(f" OPEN ORDERS ({len(orders)})")
+    print("="*60)
+
+    for order in orders:
+        print(f"Order ID: {order['orderId']}")
+        print(f"  Symbol: {order['symbol']}")
+        print(f"  Side: {order['side']}")
+        print(f"  Type: {order['type']}")
+        print(f"  Quantity: {order['origQty']}")
+        print(f"  Price: {order.get('price', 'MARKET')}")
+        print(f"  Status: {order['status']}")
+        print("-" * 60)
+    
+    print()
+
 def main():
     """Main CLI entry point"""
 
@@ -13,19 +69,31 @@ def main():
         description="Binance Futures Testnet Trading Bot",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples
+Examples:
+    # Check balance
+    python cli.py --action balance
+
+    # Get current price
+    python cli.py --action price --symbol BTCUSDT
+
     # Place market buy order
     python cli.py --action buy --amount 0.01 --type market
 
     # Place limit sell order
     python cli.py --action sell --amount 0.01 --type limit --price 95000
+
+    # View Open orders
+    python cli.py --action orders
+
+    # Cancel order
+    python cli.py --action cancel BTCUSDT --order-id 123456
         """
     )
 
     parser.add_argument(
         '--action',
         required=True,
-        choices=['buy', 'sell'],
+        choices=['buy', 'sell', 'balance', 'orders', 'cancel', 'price'],
         help='Action to perform'
     )
 
@@ -54,6 +122,12 @@ Examples
         help='Price for limit orders'
     )
 
+    parser.add_argument(
+        '--order-id',
+        type=int,
+        help='Order ID for cancellation'
+    )
+
     args = parser.parse_args()
 
     # Validate configuration
@@ -73,6 +147,9 @@ Examples
             print("Error: Limit orders require --price")
             sys.exit(1)
 
+    if args.action == 'cancel' and not args.order_id:
+        print("Error: Cancel action requires --order-id")
+        sys.exit(1)
     
     # initialize bot
     try:
@@ -88,7 +165,19 @@ Examples
 
     # Execute actioni
     try:
-        if args.action in ['buy', 'sell']:
+        if args.action == 'balance':
+            display_balance(bot)
+
+        elif args.action == 'price':
+            display_price(bot, args.symbol)
+
+        elif args.action == 'orders':
+            display_open_orders(bot, args.symbol)
+
+        elif args.action == 'cancel':
+            bot.cancel_order(args.symbol, args.order_id)
+        
+        elif args.action in ['buy', 'sell']:
             side = args.action.upper()
 
             if args.type == 'market':
@@ -104,7 +193,6 @@ Examples
         logger.error(f"\nUnexpected error during execution: {e}\n")
         print(f"\n Error: {e}\n")
         sys.exit(1)
-
-    
+ 
 if __name__ == '__main__':
     main()

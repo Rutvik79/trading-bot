@@ -33,6 +33,52 @@ class BasicBot:
             logger.error(f"Unexpected error getting account info: {e}")
             return None
         
+    def get_balance(self):
+        """
+        Get account balance
+
+        Returns:
+            list: list of asset balances
+        """
+
+        try: 
+            logger.info("Fetching account balance...")
+            balance = self.client.futures_account_balance()
+
+            logger.info(f"Retrieved balance for {len(balance)} assets")
+            return balance
+        except BinanceAPIException as e:
+            logger.error(f"API Error getting balance: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error getting balance: {e}")
+            return None
+    
+    def get_current_price(self, symbol):
+        """ 
+        Get current market price for a symbol
+
+        Args:
+            symbol (str): Trading pair symbol (eg. 'BTCUSDT')
+
+        Returns:
+            float: Current price or None if error
+        """
+
+        try: 
+            logger.info(f"Fetching current price for {symbol}...")
+            ticker = self.client.futures_symbol_ticker(symbol=symbol)
+            price = float(ticker['price'])
+
+            logger.info(f"Current {symbol} price: ${price:,.2f}")
+            return price
+        except BinanceAPIException as e:
+            logger.error(f"API Error getting price for {symbol}: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error getting price: {e}")
+            return None
+
     def place_market_order(self, symbol, side, quantity):
         """
         Place a market order (buy/sell at current price)
@@ -142,6 +188,56 @@ class BasicBot:
             logger.error(f"Unexpected error placing limit order: {e}")
             return None
         
+    def get_open_orders(self, symbol=None):
+        """  
+        Get all open orders
+
+        Args:
+            symbol (str, optional): Filter by symbol
+
+        Returns:
+            list: list of open orders
+        """
+        try:
+            logger.info(f"Fetching open orders {' for ' + symbol if symbol else ''}...")
+            orders = self.client.futures_get_open_orders(symbol=symbol)
+
+            logger.info(f"Found {len(orders)} open orders")
+            return orders
+        except BinanceAPIException as e:
+            logger.error(f"API Error getting open orders: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error getting open orders: {e}")
+            return None
+
+    def cancel_order(self, symbol, order_id):
+        """  
+            Cancel an open order
+
+        Args: 
+            symbol (str): Trading pair
+            order_id (int): Order ID to cancel
+
+        Returns:
+            dict: Cancellation result or None if error
+        """
+        try: 
+            logger.info(f"Cacelling order {order_id} for {symbol}...")
+            result = self.client.futures_cancel_order(
+                symbol=symbol,
+                orderId=order_id
+            )
+
+            logger.info(f"Order {order_id} cancelled successfully")
+            return result
+        except BinanceAPIException as e:
+            logger.error(f"API error cancelling order: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error cancelling order: {e}")
+            return None
+
     def _print_order_details(self, order):
         """ 
         Print formatted order details to console
@@ -163,5 +259,8 @@ class BasicBot:
 
         if order.get('price'):
             print(f"Price:             ${float(order.get('price')):,.2f}")
+        if order.get('avgPrice'):
+            print(f"Avg Price:         ${float(order.get('avgPrice')):,.2f}")
 
         print(f"Time:              {datetime.fromtimestamp(order.get('updateTime', 0)/1000)}")
+        print("="*60 + "\n")
