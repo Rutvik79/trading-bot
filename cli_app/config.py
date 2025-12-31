@@ -10,7 +10,6 @@ class Config:
     API_KEY=os.getenv('BINANCE_FUTURES_API_KEY')
     SECRET_KEY=os.getenv('BINANCE_FUTURES_SECRET_KEY')
 
-    TESTNET=True
 
     @classmethod
     def validate(cls):

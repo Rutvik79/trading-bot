@@ -108,7 +108,6 @@ class BasicBot:
                 side=side,
                 type=ORDER_TYPE_MARKET,
                 quantity=quantity,
-                timestamp=datetime.now(),
             )
 
             # log response
@@ -190,65 +189,71 @@ class BasicBot:
         
     def place_stop_limit_order(self, symbol, side, quantity, stop_price, limit_price):
         """  
-        Place a stop-limit order 
-        Triggers a limit order when stop price is reached
+        Place a STOP-LIMIT order on Binance USDT-M Futures Testnet.
+        Triggers a LIMIT order when the stop price is reached.
 
         Args:
-            symbol (str): Trading pair
+            symbol (str): Trading pair (e.g., 'BTCUSDT')
             side (str): 'BUY' or 'SELL'
             quantity (float): Amount to trade
             stop_price (float): Trigger price
-            limit_price (float): limit price after trigger
+            limit_price (float): Limit price after trigger
 
         Returns:
             dict: Order details or None if error
         """
 
         try:
-            # Validate input
-            if side not in ['BUY', 'SELL']:
+
+            # Validate inputs
+            if side not in ["BUY", "SELL"]:
                 raise ValueError("Side must be 'BUY' or 'SELL'")
             if quantity <= 0:
                 raise ValueError("Quantity must be positive")
             if stop_price <= 0 or limit_price <= 0:
                 raise ValueError("Prices must be positive")
-            
-            logger.info(f"Placing STOP_LILMIT {side} order: {quantity} {symbol}")
-            logger.info(f"Stop Price: ${stop_price} Limit Price: ${limit_price}")
 
-            # log request
-            logger.info(f"Request - Symbol: {symbol}, Side: {side}, "
-                         f"Type: STOP, Quantity: {quantity}, "
-                         f"Stop Price: {stop_price}, Limit Price: {limit_price}")
-            
-            # plcae the order
+            logger.info(
+                f"Placing STOP-LIMIT {side} order: {quantity} {symbol} "
+                f"(Stop: {stop_price}, Limit: {limit_price})"
+            )
+
+            # Place STOP-LIMIT order
             order = self.client.futures_create_order(
                 symbol=symbol,
                 side=side,
-                type='STOP',
-                timeInForce='GTC',
+                type="STOP",                 # STOP-LIMIT (NOT algo)
+                timeInForce=TIME_IN_FORCE_GTC,
                 quantity=quantity,
-                price=limit_price,
-                stopPrice=stop_price
+                price=limit_price,           # LIMIT price
+                stopPrice=stop_price,        # Trigger price
+                # workingType="MARK_PRICE"     # or 'CONTRACT_PRICE'
             )
+            print("order details: ", order)
+            order['orderId'] = order.get('orderId') or order.get('algoId')
+            order['status'] = order.get('status') or order.get('algoStatus')
 
-            # print("order from stop limit", order)
-            # log response
-            logger.info(f"Response - Order ID: {order['algoId']}, "
-                        f"Status: {order['algoStatus']}")
-            logger.info(f" Stop-limit order placed successfully")
+            
+            # Log response
+            logger.info(
+                f"Response - Order ID: {order['orderId']}, "
+                f"Status: {order['status']}"
+            )
+            logger.info("Stop-Limit order placed successfully")
 
-            # forat output
-            self._print_stop_limit_order_details(order)
+            # Print formatted output
+            self._print_order_details(order)
 
             return order
 
         except BinanceAPIException as e:
-            logger.error(f"Binance API Error: {e}")
+            logger.error(f"Binance API Error placing stop-limit order: {e}")
             return None
+
         except ValueError as e:
-            logger.error(f" Vallidation Error: {e}")
+            logger.error(f"Validation Error: {e}")
             return None
+
         except Exception as e:
             logger.error(f"Unexpected error placing stop-limit order: {e}")
             return None
@@ -320,33 +325,6 @@ class BasicBot:
         print(f"Type:              {order.get('type')}")
         print(f"Status:            {order.get('status')}")
         print(f"Quantity:          {order.get('origQty')}")
-        print(f"Expected Qty:      {order.get('executedQty', 'N/A')}")
-
-        if order.get('price'):
-            print(f"Price:             ${float(order.get('price')):,.2f}")
-        if order.get('avgPrice'):
-            print(f"Avg Price:         ${float(order.get('avgPrice')):,.2f}")
-
-        print(f"Time:              {datetime.fromtimestamp(order.get('updateTime', 0)/1000)}")
-        print("="*60 + "\n")
-
-    def _print_stop_limit_order_details(self, order):
-        """ 
-        Print formatted order details to console
-
-        Args:
-            order (dict): Order Information
-        """
-
-        print("\n" + "="*60)
-        print(" ORDER EXECUTION DETAILS")
-        print("="*60)
-        print(f"Order ID:          {order.get('algoId')}")
-        print(f"Symbol:            {order.get('symbol')}")
-        print(f"Side:              {order.get('side')}")
-        print(f"Type:              {order.get('algoType')}")
-        print(f"Status:            {order.get('algoStatus')}")
-        print(f"Quantity:          {order.get('quantity')}")
         print(f"Expected Qty:      {order.get('executedQty', 'N/A')}")
 
         if order.get('price'):
