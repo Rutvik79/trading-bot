@@ -15,6 +15,7 @@ class BasicBot:
 
         # set future url
         self.client.API_URL = 'https://testnet.binancefuture.com'
+        # self.client.API_URL = 'https://demo-fapi.binance.com'
 
         logger.info(f"BasicBot initialized (Testnet: {testnet})")
         logger.info(f"Using API URL: {self.client.API_URL}")
