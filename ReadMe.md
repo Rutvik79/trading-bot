@@ -1,6 +1,6 @@
 # Binance Futures Trading Bot (Testnet)
 
-This is a simple Python CLI trading bot built for Binance Futures Testnet (USDT-M)/
+This is a simple Python CLI trading bot built for Binance Futures Testnet (USDT-M).
 It allows placing market, limit and stop-limit orders and checking account details using the Binance API.
 
 NOTE: This project is for learning purpose only and works only on Binance Futures Testnet.
@@ -12,7 +12,7 @@ NOTE: This project is for learning purpose only and works only on Binance Future
 - Place Market orders
 - Place Limit orders
 - Place Stop-Limit orders
-- View Open orders
+- View open orders
 - Cancel orders
 - CLI based (menu + command arguments)
 
@@ -44,23 +44,25 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+
 ## Binance Testnet Configuration
 **1. Create Testnet Account**
 - Go to: https://testnet.binancefutures.com/
 - Register using Google or GitHub
 - Test account comes with fake USDT balance
 
-2. Generate API Keys
+**2. Generate API Keys**
 - Go to API Key section
 - Generate HMAC_SHA256 keys
 - Copy API Key and Secret Key
 
-3. Create .env file
+**3. Create .env file**
 Create a .env file inside cli_app/ folder:
 ```.env
 BINANCE_FUTURES_API_KEY=your_api_key_here
 BINANCE_FUTURES_SECRET_KEY=your_secret_key_here
 ```
+
 
 ## Running the Application
 Option 1: Interactive Menu Mode
@@ -76,7 +78,7 @@ You will see a menu like:
 5. Place Limit Order
 6. Place Stop-Limit Order
 7. View Open Orders
-8. Cancel Orders
+8. Cancel Order
 9. Exit
 ```
 Follow the prompts to perform actions.
@@ -106,6 +108,7 @@ python cli.py --action orders
 python cli.py --action cancel --symbol BTCUSDT --order-id 123456789
 ```
 
+
 ## Project Structure
 ```bash
 trading-bot/
@@ -122,15 +125,18 @@ trading-bot/
 └── README.md
 ```
 
+
 ## Notes
 - This bot uses Binance Futures Testnet only
-- All Trades use Fake funds
+- All trades use fake funds
 - Logging is stored in trading_bot.log
 - Make sure you run the script from the cli_app folder
   
+
 ## Disclaimer
 This project is created only for educational purposes.
 Do not use this with real trading accounts.
+
 
 ## Author
 Rutvik
